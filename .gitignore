@@ -1,0 +1,39 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+pip-wheel-metadata/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local application data
+*.db
+*.sqlite
+*.sqlite3
+.cache/
+export/
+corpus/pdfs/
+
+# Editors and operating systems
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

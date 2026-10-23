@@ -1,0 +1,12 @@
+langchain
+langchain-openai
+wikipedia
+langchain-community
+langchain-anthropic
+python-dotenv
+pydantic
+ddgs
+requests
+rapidfuzz
+PyMuPDF
+langgraph
