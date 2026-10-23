@@ -1,28 +1,45 @@
 # AI Research Paper Pipeline
 
-An evidence-aware, human-in-the-loop pipeline for turning a research question into a verified, submission-ready paper package.
+> **From research question to evidence-checked paper package.**
 
-The application coordinates nine stages with [LangGraph](https://langchain-ai.github.io/langgraph/), uses an OpenRouter-compatible chat model for language-model tasks, stores research state in SQLite, and exports LaTeX/PDF/BibTeX artifacts. It is designed for survey and literature-based research workflows, not for unsupervised publication.
+An evidence-aware, human-in-the-loop workflow for literature-based research. It scopes a topic, retrieves sources, extracts evidence, identifies gaps, drafts a paper, verifies claims, revises weak sections, and exports submission artifacts.
 
-> **Important:** Generated text and citations still require expert review. The verification stage is a quality gate, not a guarantee of factual correctness, originality, or acceptance by a venue.
+![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)
+![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-1f2937)
+![Status](https://img.shields.io/badge/status-early%20development-orange)
 
-## Contents
+The application uses [LangGraph](https://langchain-ai.github.io/langgraph/), an OpenRouter-compatible chat model, SQLite state stores, and LaTeX/PDF/BibTeX export tooling. It is designed for assisted research workflows, **not unsupervised publication**.
+
+> [!IMPORTANT]
+> Generated text and citations still require expert review. Verification is a quality gate, not a guarantee of factual correctness, originality, or acceptance by a venue.
+
+## Start here
+
+| I want to... | Go to |
+| --- | --- |
+| Install and run the pipeline | [Quick start](#quick-start) |
+| Understand the nine stages | [Pipeline stages](#pipeline-stages) |
+| See the workflow visually | [Workflow](#workflow) |
+| Configure models and limits | [Configuration](#configuration) |
+| Understand generated files | [Outputs](#outputs) |
+
+<details open>
+<summary><strong>Documentation menu</strong></summary>
 
 - [What it does](#what-it-does)
+- [Workflow](#workflow)
 - [Pipeline stages](#pipeline-stages)
 - [Control flow and approval gates](#control-flow-and-approval-gates)
 - [Data flow and storage](#data-flow-and-storage)
 - [Requirements](#requirements)
-- [Installation](#installation)
+- [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Running the pipeline](#running-the-pipeline)
 - [Outputs](#outputs)
 - [Project structure](#project-structure)
-- [Development and validation](#development-and-validation)
-- [Troubleshooting](#troubleshooting)
-- [Security and responsible use](#security-and-responsible-use)
-- [Limitations and roadmap](#limitations-and-roadmap)
 - [License](#license)
+
+</details>
 
 ## What it does
 
@@ -39,6 +56,34 @@ Given a topic, the pipeline:
 9. Produces a formatted export package after final approval.
 
 The stages are connected by explicit state transitions. Human approval gates allow the researcher to inspect results before downstream work begins.
+
+## Workflow
+
+```mermaid
+flowchart LR
+    A[Question] --> B[Scope]
+    B --> C[Sources]
+    C --> D[Evidence]
+    D --> E[Gaps]
+    E --> F[Outline]
+    F --> G[Draft]
+    G --> H{Verify}
+    H -->|needs work| I[Revise]
+    I --> H
+    H -->|passes| J[Export]
+    J --> K[Paper package]
+```
+
+<details>
+<summary><strong>What makes the workflow different?</strong></summary>
+
+- **Evidence-first drafting:** the outline and draft are grounded in extracted source notes.
+- **Human checkpoints:** the researcher can approve, rerun, or reject intermediate results.
+- **Verification before export:** citations, claims, numbers, overlap, and placeholders are checked before formatting.
+- **Bounded revision:** verification failures route to targeted revision loops instead of silently passing through.
+- **Reproducible local state:** source metadata and extracted notes are kept in SQLite for inspection and reuse.
+
+</details>
 
 ## Pipeline stages
 
@@ -79,7 +124,8 @@ flowchart TD
     G9 -->|reject| Stop
 ```
 
-### Stage details
+<details open>
+<summary><strong>Stage details</strong></summary>
 
 | Stage | Module | Inputs | Main result |
 | ---: | --- | --- | --- |
@@ -92,6 +138,8 @@ flowchart TD
 | 7 | `verification.py` | Draft, outline, corpus, notes | `VerificationReport` with verdicts, issues, pass rate, and fix list |
 | 8 | `revision.py` | Draft and verification report | Revised draft and a route back to verification or earlier stages |
 | 9 | `export.py` | Approved revised draft and corpus | Preflight report and formatted output package |
+
+</details>
 
 ## Control flow and approval gates
 
@@ -151,7 +199,8 @@ flowchart TB
     Export --> Output[export/]
 ```
 
-### Local data policy
+<details>
+<summary><strong>Local data policy</strong></summary>
 
 The following are runtime artifacts and are ignored by Git:
 
@@ -165,6 +214,8 @@ The following are runtime artifacts and are ignored by Git:
 
 Deleting these files can remove local research state, downloaded papers, or generated outputs. Back them up separately if they are valuable.
 
+</details>
+
 ## Requirements
 
 - Python 3.10 or newer
@@ -175,7 +226,7 @@ Deleting these files can remove local research state, downloaded papers, or gene
 - Optional: a local [GROBID](https://github.com/kermitt2/grobid) server for enhanced PDF extraction
 - Optional: a working LaTeX installation if the export implementation compiles LaTeX locally
 
-## Installation
+## Quick start
 
 ### Windows PowerShell
 
@@ -209,6 +260,9 @@ Set `OPENROUTER_API_KEY` in `.env` before starting the pipeline. Never commit `.
 
 All settings are read from environment variables. The complete starter configuration is in [.env.example](.env.example).
 
+<details open>
+<summary><strong>Model and service settings</strong></summary>
+
 ### Model and service settings
 
 | Variable | Default | Description |
@@ -221,6 +275,11 @@ All settings are read from environment variables. The complete starter configura
 | `USE_GROBID` | `false` | Enable GROBID-backed extraction |
 | `GROBID_URL` | `http://localhost:8070` | GROBID service URL |
 
+</details>
+
+<details>
+<summary><strong>Storage settings</strong></summary>
+
 ### Storage settings
 
 | Variable | Default | Description |
@@ -229,6 +288,11 @@ All settings are read from environment variables. The complete starter configura
 | `EXTRACTION_DB_PATH` | `extraction.db` | SQLite extraction database |
 | `PDF_DIR` | `corpus/pdfs` | Downloaded/source PDF directory |
 | `OUTPUT_DIR` | `export` | Generated output directory |
+
+</details>
+
+<details>
+<summary><strong>Research and export settings</strong></summary>
 
 ### Research and export settings
 
@@ -247,6 +311,8 @@ All settings are read from environment variables. The complete starter configura
 | `AUTHORS` | empty | Comma-separated author names |
 | `CORRESPONDING_EMAIL` | empty | Optional corresponding-author email |
 | `GENERATE_DOCX` | `false` | Request DOCX generation |
+
+</details>
 
 ## Running the pipeline
 
