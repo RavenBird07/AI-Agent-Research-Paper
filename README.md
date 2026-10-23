@@ -9,7 +9,6 @@ The application coordinates nine stages with [LangGraph](https://langchain-ai.gi
 ## Contents
 
 - [What it does](#what-it-does)
-- [Architecture](#architecture)
 - [Pipeline stages](#pipeline-stages)
 - [Control flow and approval gates](#control-flow-and-approval-gates)
 - [Data flow and storage](#data-flow-and-storage)
@@ -40,68 +39,6 @@ Given a topic, the pipeline:
 9. Produces a formatted export package after final approval.
 
 The stages are connected by explicit state transitions. Human approval gates allow the researcher to inspect results before downstream work begins.
-
-## Architecture
-
-### System overview
-
-```mermaid
-flowchart LR
-    User[Researcher] --> CLI[main.py CLI]
-    CLI --> Graph[LangGraph workflow]
-    Graph --> Agents[Pipeline agents]
-    Agents --> LLM[OpenRouter chat model]
-    Agents --> Sources[Web and scholarly sources]
-    Agents --> Corpus[(corpus.db)]
-    Agents --> Notes[(extraction.db)]
-    Graph --> Checkpoints[Human approval checkpoints]
-    Graph --> Export[ExportAgent]
-    Export --> Files[export/ PDF, LaTeX, BibTeX, bundle]
-    Config[.env] -. configuration .-> CLI
-    Config -. credentials .-> LLM
-```
-
-### Runtime interaction
-
-```mermaid
-sequenceDiagram
-    actor Researcher
-    participant CLI as main.py
-    participant Graph as LangGraph
-    participant Model as OpenRouter model
-    participant DB as SQLite stores
-    participant Export as ExportAgent
-
-    Researcher->>CLI: Enter research topic
-    CLI->>Model: Create configured chat client
-    CLI->>Graph: Invoke initial state
-    loop Stages 1-5
-        Graph->>Model: Generate stage result
-        Graph->>DB: Persist corpus or extracted state
-        Graph-->>CLI: Interrupt for approval
-        CLI-->>Researcher: Display options
-        Researcher->>CLI: approve, rerun, or reject
-        CLI->>Graph: Resume with decision
-    end
-    Graph->>Model: Draft and verify
-    Graph->>Graph: Route to revision when verification fails
-    Graph->>Export: Build approved export
-    Export->>DB: Read verified content and citations
-    Export-->>CLI: Return export report
-    CLI-->>Researcher: Show PDF and submission status
-```
-
-### Component responsibilities
-
-| Component | Responsibility |
-| --- | --- |
-| `main.py` | Loads configuration, creates the model and agents, starts/resumes the graph |
-| LangGraph graph | Orchestrates stages, interrupts for approval, and routes verification/revision loops |
-| Stage agents | Perform scoping, retrieval, extraction, analysis, drafting, revision, verification, and export |
-| OpenRouter | Provides the configured chat model through an OpenAI-compatible endpoint |
-| `corpus.db` | Stores source metadata, screening state, and corpus records |
-| `extraction.db` | Stores extracted notes and evidence used by analysis and drafting |
-| Export layer | Performs preflight checks and creates submission artifacts without intentionally changing verified content |
 
 ## Pipeline stages
 
@@ -381,3 +318,4 @@ Export can be blocked by preflight issues such as missing citations, unresolved 
 ## License
 
 No license has been selected for this project yet. Add a license before publishing if you want others to use, modify, or redistribute the code.
+ 
